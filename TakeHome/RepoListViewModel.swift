@@ -10,15 +10,13 @@ import UsefulDecode
 
 final class RepoListViewModel: ObservableObject {
 
-    enum State {
-        case loading
-        case loaded(org: Org, repos: [Repo])
-    }
+    @Published var data: (org: Org, repos: [Repo])?
 
-    @Published var state: State = .loading
+    var allRepos: [Repo] = []
+
+    @Published var searchString = ""
 
     @MainActor func loadRepos() async {
-        state = .loading
         let reposRequest = request(forEndpoint: "orgs/learn-swift-boston/repos")
         let orgRequest = request(forEndpoint: "orgs/learn-swift-boston")
         do {
@@ -29,10 +27,18 @@ final class RepoListViewModel: ObservableObject {
             let sortedRepos = repos.sorted(by: { lhs, rhs in
                 lhs.createdAt > rhs.createdAt
             })
-            self.state = .loaded(org: org, repos: sortedRepos)
+            allRepos = sortedRepos
+            data = (org: org, repos: allRepos)
+            performSearch()
         } catch {
             print("error loading: \(error)")
         }
+    }
+
+    func performSearch() {
+        guard !allRepos.isEmpty else { return }
+        guard !searchString.isEmpty else { data?.repos = allRepos; return }
+        data?.repos = allRepos.filter { $0.name.lowercased().contains(searchString.lowercased()) }
     }
 }
 

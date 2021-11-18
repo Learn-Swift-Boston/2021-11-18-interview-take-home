@@ -13,22 +13,23 @@ struct RepoListView: View {
 
     var body: some View {
         Group {
-            switch viewModel.state {
-            case .loading:
-                Text("loading")
-            case .loaded(let org, let repos):
+            if let data = viewModel.data {
                 List {
                     Section(content: {
-                        ForEach(repos, content: RepoView.init(repo:))
+                        ForEach(data.repos, content: RepoView.init(repo:))
                     }, header: {
                         HStack {
-                            CircleLabelView(number: org.publicRepos, title: "Public Repos", color: .orange)
-                            CircleLabelView(number: org.followers, title: "Followers", color: .purple)
-                            CircleLabelView(number: org.following, title: "Following", color: .blue)
+                            CircleLabelView(number: data.org.publicRepos, title: "Public Repos", color: .orange)
+                            CircleLabelView(number: data.org.followers, title: "Followers", color: .purple)
+                            CircleLabelView(number: data.org.following, title: "Following", color: .blue)
                         }
                         .frame(maxWidth: .infinity)
                     })
                 }
+                .searchable(text: $viewModel.searchString)
+            }
+            else {
+                Text("Loading…")
             }
         }
         .navigationTitle("Repos for Learn Swift Boston")
@@ -40,6 +41,9 @@ struct RepoListView: View {
         }
         .refreshable {
             await viewModel.loadRepos()
+        }
+        .onChange(of: viewModel.searchString) { _ in
+            viewModel.performSearch()
         }
     }
 }
